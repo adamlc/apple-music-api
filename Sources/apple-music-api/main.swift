@@ -45,6 +45,8 @@ func parseBool(_ s: String?) -> Bool? {
 func handle(_ body: () async throws -> Response) async -> Response {
     do {
         return try await body()
+    } catch is MusicNotRunning {
+        return Response(status: .serviceUnavailable, body: .init(byteBuffer: .init(string: "Music is not running")))
     } catch CommandError.badRequest(let message) {
         return Response(status: .badRequest, body: .init(byteBuffer: .init(string: message)))
     } catch {
@@ -69,7 +71,14 @@ func command(settle: Duration = .zero, _ action: () async throws -> Void) async 
 router.get("/_ping") { _, _ in "OK" }
 
 router.get("/now_playing") { _, _ in
-    await handle { try jsonResponse(try await nowPlayingCache.get()) }
+    await handle {
+        do {
+            return try jsonResponse(try await nowPlayingCache.get())
+        } catch is MusicNotRunning {
+            // Report an idle player rather than an error, so Home Assistant shows it as stopped.
+            return try jsonResponse(NowPlaying(player_state: "stopped"))
+        }
+    }
 }
 
 router.get("/artwork") { _, _ in

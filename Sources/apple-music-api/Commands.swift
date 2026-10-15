@@ -5,13 +5,13 @@ enum CommandError: Error { case badRequest(String) }
 extension MusicScript {
     /// Run one or more statements inside `tell application "Music"`.
     @discardableResult
-    func tell(_ statements: String) async throws -> NSAppleEventDescriptor {
-        try await run("tell application \"Music\"\n\(statements)\nend tell")
+    func tell(_ statements: String, launch: Bool = false) async throws -> NSAppleEventDescriptor {
+        try await run("tell application \"Music\"\n\(statements)\nend tell", launchIfNeeded: launch)
     }
 
-    func play() async throws { try await tell("play") }
+    func play() async throws { try await ensureRunning(); try await tell("play", launch: true) }
     func pause() async throws { try await tell("pause") }
-    func playPause() async throws { try await tell("playpause") }
+    func playPause() async throws { try await ensureRunning(); try await tell("playpause", launch: true) }
     func stop() async throws { try await tell("stop") }
     func previous() async throws { try await tell("previous track") }
     func next() async throws { try await tell("next track") }

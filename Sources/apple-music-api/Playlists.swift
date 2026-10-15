@@ -31,9 +31,9 @@ func parameterize(_ s: String) -> String {
 }
 
 extension MusicScript {
-    func playlists() async throws -> [Playlist] {
+    func playlists(launch: Bool = false) async throws -> [Playlist] {
         // Bulk property fetch: one Apple Event per property, not per playlist.
-        let d = try await tell("return {id, name, favorited, duration, time} of every playlist")
+        let d = try await tell("return {id, name, favorited, duration, time} of every playlist", launch: launch)
         guard d.numberOfItems == 5, let ids = d.atIndex(1), let names = d.atIndex(2),
               let loved = d.atIndex(3), let durations = d.atIndex(4), let times = d.atIndex(5)
         else { return [] }
@@ -54,8 +54,9 @@ extension MusicScript {
 
     /// Returns false if no playlist has that parameterized name.
     func playPlaylist(id: String) async throws -> Bool {
-        guard let playlist = try await playlists().first(where: { $0.id == id }) else { return false }
-        try await tell("play (first playlist whose id is \(playlist.musicID))")
+        try await ensureRunning()
+        guard let playlist = try await playlists(launch: true).first(where: { $0.id == id }) else { return false }
+        try await tell("play (first playlist whose id is \(playlist.musicID))", launch: true)
         return true
     }
 }

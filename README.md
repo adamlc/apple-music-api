@@ -55,6 +55,20 @@ again after each rebuild; set `SIGN_IDENTITY` to a stable certificate to avoid t
 runtime needs the Apple Events entitlement in `Resources/apple-music-api.entitlements`, or macOS blocks
 the app from controlling Music.
 
+### Installing
+
+    script/install
+
+Builds the app, copies it to `~/Applications`, and (re)starts it. Turn on **Start at Login** from the
+menu bar item once it is running from there.
+
+### When Music isn't running
+
+Sending an Apple Event to Music launches it, so polling would keep reopening a Music you've quit.
+Instead, `/now_playing` reports `{"player_state": "stopped"}`, and other requests return `503`. Only
+`PUT /play`, `/playpause` and `/playlists/:id/play` launch Music (waiting a few seconds for it to
+finish starting), since they are asking for playback.
+
 ### Menu bar
 
 The app lives in the menu bar (no Dock icon). From there you can change the port (it restarts to
