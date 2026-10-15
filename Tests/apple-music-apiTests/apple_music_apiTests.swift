@@ -43,6 +43,37 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
     }
 }
 
+@Suite struct PlaylistIDTests {
+    @Test func uniqueNamesGetPlainIDs() {
+        let ids = playlistIDs(names: ["Chill", "Get Up"], persistentIDs: ["AAAA", "BBBB"])
+        #expect(ids == ["chill", "get-up"])
+    }
+
+    @Test func firstDuplicateKeepsThePlainID() {
+        let ids = playlistIDs(names: ["Music Videos", "Music Videos"], persistentIDs: ["C0FFEE0011223344", "ABCDEF5566778899"])
+        #expect(ids[0] == "music-videos")
+        #expect(ids[1] == "music-videos-778899")
+    }
+
+    @Test func suffixesDontDependOnOrder() {
+        // Reordering must not change a playlist's suffixed id.
+        let a = playlistIDs(names: ["X", "X"], persistentIDs: ["1111111111AAAAAA", "2222222222BBBBBB"])
+        let b = playlistIDs(names: ["X", "X"], persistentIDs: ["2222222222BBBBBB", "1111111111AAAAAA"])
+        #expect(a[1] == "x-bbbbbb")
+        #expect(b[1] == "x-aaaaaa")
+    }
+
+    @Test func threeWayDuplicatesAllDiffer() {
+        let ids = playlistIDs(names: ["X", "X", "X"], persistentIDs: ["AA000001", "AA000002", "AA000003"])
+        #expect(Set(ids).count == 3)
+    }
+
+    @Test func nameWithNoLettersFallsBackToPersistentID() {
+        let ids = playlistIDs(names: ["!!!"], persistentIDs: ["ABCDEF0123456789"])
+        #expect(ids == ["abcdef0123456789"])
+    }
+}
+
 // MARK: - Request parsing
 
 @Suite struct FormTests {

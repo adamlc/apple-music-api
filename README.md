@@ -27,6 +27,8 @@ Form fields can be sent as `application/x-www-form-urlencoded` bodies or query p
     PUT /airplay_devices/:id/on | /off
     PUT /airplay_devices/:id/volume    level=0-100
 
+Playlist ids are slugs of the name (`Outkast: The '90s` → `outkast-the-90s`). If two playlists share a name, the first keeps the plain id and the rest get a suffix from their persistent id (`music-videos-cf460c`), which doesn't change if playlists are reordered. `PUT /playlists/:id/play` also accepts a persistent id.
+
 Differences from the Node version: unknown playlists or AirPlay devices return 404 (Node returned an
 empty object for AirPlay), invalid parameters return 400, and playlist `loved` uses the playlist's
 `favorited` flag.
