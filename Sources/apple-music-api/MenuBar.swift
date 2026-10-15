@@ -8,10 +8,10 @@ final class MenuBar: NSObject {
 
     init(port: Int) {
         super.init()
-        statusItem.button?.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "apple-music-api")
+        statusItem.button?.image = NSImage(systemSymbolName: "music.note", accessibilityDescription: "Apple Music API")
 
         let menu = NSMenu()
-        let title = NSMenuItem(title: "apple-music-api — port \(port)", action: nil, keyEquivalent: "")
+        let title = NSMenuItem(title: "Apple Music API — port \(port)", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)
         menu.addItem(.separator())

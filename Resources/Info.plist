@@ -5,9 +5,9 @@
 	<key>CFBundleIdentifier</key>
 	<string>uk.co.adamlc.apple-music-api</string>
 	<key>CFBundleName</key>
-	<string>apple-music-api</string>
+	<string>Apple Music API</string>
 	<key>CFBundleDisplayName</key>
-	<string>apple-music-api</string>
+	<string>Apple Music API</string>
 	<key>CFBundleExecutable</key>
 	<string>apple-music-api</string>
 	<key>CFBundlePackageType</key>
@@ -21,6 +21,6 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>apple-music-api needs to control Music to report what is playing and to handle playback commands.</string>
+	<string>Apple Music API needs to control Music to report what is playing and to handle playback commands.</string>
 </dict>
 </plist>

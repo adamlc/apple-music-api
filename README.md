@@ -43,10 +43,10 @@ Requires macOS 14+ and Xcode (for the Swift toolchain).
 ### As an app
 
     script/bundle
-    open -n build/apple-music-api.app --env PORT=10100
+    open -n "build/Apple Music API.app" --env PORT=10100
 
 Launching the bundle through `open` (or launchd) makes it its own process as far as macOS is
-concerned, so the "control Music" permission prompt is for `apple-music-api` itself rather than for the
+concerned, so the "control Music" permission prompt is for "Apple Music API" itself rather than for the
 terminal that started it. Running the bare binary from a terminal attributes the permission to that
 terminal instead.
 
