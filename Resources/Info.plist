@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>uk.co.adamlc.itunes-api</string>
+	<key>CFBundleName</key>
+	<string>itunes-api</string>
+	<key>CFBundleVersion</key>
+	<string>0.1</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>itunes-api needs to control Music to report what is playing and to handle playback commands.</string>
+</dict>
+</plist>
