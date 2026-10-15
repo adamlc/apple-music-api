@@ -23,10 +23,14 @@ private let nowPlayingScript = """
 tell application "Music"
     set ps to player state as text
     if ps is "stopped" then return {ps}
-    set t to current track
     set pl to ""
     try
         set pl to name of current playlist
+    end try
+    try
+        set t to current track
+    on error
+        return {ps}
     end try
     return {ps, persistent ID of t, name of t, artist of t, album of t, year of t, sound volume, mute, song repeat as text, shuffle enabled, shuffle mode as text, pl}
 end tell
@@ -42,12 +46,13 @@ extension MusicScript {
         let year = d.atIndex(6)?.int32Value ?? 0
         let album = year > 0 ? "\(s(5)) (\(year))" : s(5)
         let pl = s(12)
+        let emulatedMuteVolume = mutedVolume.withLock { $0 }
         return NowPlaying(
             player_state: state,
             id: s(2), name: s(3), artist: s(4), album: album,
             playlist: (pl == "Music" || pl == "Library") ? "" : pl,
-            volume: Int(d.atIndex(7)?.int32Value ?? 0),
-            muted: d.atIndex(8)?.booleanValue ?? false,
+            volume: emulatedMuteVolume ?? Int(d.atIndex(7)?.int32Value ?? 0),
+            muted: emulatedMuteVolume != nil || (d.atIndex(8)?.booleanValue ?? false),
             repeatMode: s(9),
             shuffle: (d.atIndex(10)?.booleanValue ?? false) && !s(11).isEmpty
         )

@@ -74,10 +74,10 @@ router.get("/artwork") { _, _ in
 
 // MARK: - Player control
 
-router.put("/play") { _, _ in await command { try await music.play() } }
-router.put("/pause") { _, _ in await command { try await music.pause() } }
-router.put("/playpause") { _, _ in await command { try await music.playPause() } }
-router.put("/stop") { _, _ in await command { try await music.stop() } }
+router.put("/play") { _, _ in await command(settle: .milliseconds(150)) { try await music.play() } }
+router.put("/pause") { _, _ in await command(settle: .milliseconds(150)) { try await music.pause() } }
+router.put("/playpause") { _, _ in await command(settle: .milliseconds(150)) { try await music.playPause() } }
+router.put("/stop") { _, _ in await command(settle: .milliseconds(150)) { try await music.stop() } }
 router.put("/previous") { _, _ in await command(settle: .milliseconds(250)) { try await music.previous() } }
 router.put("/next") { _, _ in await command(settle: .milliseconds(250)) { try await music.next() } }
 
@@ -108,7 +108,7 @@ router.put("/shuffle") { request, _ in
 
 router.put("/repeat") { request, _ in
     let form = try await formValues(request)
-    return await command { try await music.setRepeat(form["mode"] ?? "all") }
+    return await command(settle: .milliseconds(150)) { try await music.setRepeat(form["mode"] ?? "all") }
 }
 
 // MARK: - Playlists

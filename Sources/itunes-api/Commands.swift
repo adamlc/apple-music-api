@@ -17,11 +17,28 @@ extension MusicScript {
     func next() async throws { try await tell("next track") }
 
     func setVolume(_ level: Int) async throws {
+        mutedVolume.withLock { $0 = nil }
         try await tell("set sound volume to \(min(max(level, 0), 100))")
     }
 
+    /// Music's `mute` property can't be set to true on current macOS versions (error 9038), so when
+    /// that fails we emulate muting by dropping the volume to 0 and restoring it on unmute.
     func setMuted(_ muted: Bool) async throws {
-        try await tell("set mute to \(muted)")
+        if muted {
+            if mutedVolume.withLock({ $0 }) != nil { return }
+            do {
+                try await tell("set mute to true")
+            } catch {
+                let current = try await tell("return sound volume").int32Value
+                mutedVolume.withLock { $0 = Int(current) }
+                try await tell("set sound volume to 0")
+            }
+        } else {
+            _ = try? await tell("set mute to false")
+            if let restore = mutedVolume.withLock({ let v = $0; $0 = nil; return v }) {
+                try await tell("set sound volume to \(restore)")
+            }
+        }
     }
 
     /// `mode` is "songs", "albums", "groupings", or "off"/"false" to disable.

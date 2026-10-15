@@ -7,6 +7,9 @@ struct MusicError: Error { let message: String }
 final class MusicScript: @unchecked Sendable {
     private let queue = DispatchQueue.main
 
+    /// Volume to restore when unmuting, set only while mute is emulated (see `setMuted`).
+    let mutedVolume = Locked<Int?>(nil)
+
     func run(_ source: String) async throws -> NSAppleEventDescriptor {
         try await withCheckedThrowingContinuation { cont in
             queue.async {
@@ -22,5 +25,16 @@ final class MusicScript: @unchecked Sendable {
                 }
             }
         }
+    }
+}
+
+/// Minimal lock-protected value (Synchronization.Mutex needs macOS 15).
+final class Locked<Value>: @unchecked Sendable {
+    private var value: Value
+    private let lock = NSLock()
+    init(_ value: Value) { self.value = value }
+    func withLock<R>(_ body: (inout Value) -> R) -> R {
+        lock.lock(); defer { lock.unlock() }
+        return body(&value)
     }
 }
