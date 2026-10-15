@@ -56,7 +56,8 @@ extension MusicScript {
         let devices = try await airPlayDevices()
         guard let index = devices.firstIndex(where: { $0.id == id }) else { return nil }
         try await tell("set \(property) of AirPlay device \(index + 1) to \(value)")
-        return try await airPlayDevices()[index]
+        // Music reorders the list when a device is selected, so look it up by id again.
+        return try await airPlayDevice(id: id)
     }
 
     func setAirPlayDevice(id: String, selected: Bool) async throws -> AirPlayDevice? {
