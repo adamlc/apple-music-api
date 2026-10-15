@@ -23,14 +23,15 @@ enum IconArtwork {
         head(cx: 26, cy: 21)
         head(cx: 71, cy: 13)
 
-        shapes.append(NSBezierPath(rect: NSRect(x: 36, y: 21, width: 6, height: 68)))
-        shapes.append(NSBezierPath(rect: NSRect(x: 81, y: 13, width: 6, height: 66)))
+        // Each stem's right edge sits on the right edge of its (tilted) notehead.
+        shapes.append(NSBezierPath(rect: NSRect(x: 33.6, y: 21, width: 6, height: 68)))
+        shapes.append(NSBezierPath(rect: NSRect(x: 78.6, y: 13, width: 6, height: 66)))
 
         let beam = NSBezierPath()
-        beam.move(to: NSPoint(x: 36, y: 91))
-        beam.line(to: NSPoint(x: 87, y: 81))
-        beam.line(to: NSPoint(x: 87, y: 66))
-        beam.line(to: NSPoint(x: 36, y: 76))
+        beam.move(to: NSPoint(x: 33.6, y: 91))
+        beam.line(to: NSPoint(x: 84.6, y: 81))
+        beam.line(to: NSPoint(x: 84.6, y: 66))
+        beam.line(to: NSPoint(x: 33.6, y: 76))
         beam.close()
         shapes.append(beam)
         return shapes
@@ -80,7 +81,12 @@ enum IconArtwork {
         noteShadow.shadowOffset = NSSize(width: 0, height: -8)
         noteShadow.set()
         NSColor.white.setFill()
+        // One transparency layer so the shadow falls on the whole note, not on each piece
+        // (per-piece shadows draw seams where the stems meet the heads and beam).
+        let cg = NSGraphicsContext.current!.cgContext
+        cg.beginTransparencyLayer(auxiliaryInfo: nil)
         fillNote(transform: t)
+        cg.endTransparencyLayer()
         NSGraphicsContext.restoreGraphicsState()
     }
 
