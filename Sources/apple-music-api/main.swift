@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Hummingbird
 
@@ -167,4 +168,19 @@ router.put("/airplay_devices/:id/volume") { request, context in
 
 let port = Int(ProcessInfo.processInfo.environment["PORT"] ?? "") ?? 10100
 let app = Application(router: router, configuration: .init(address: .hostname("0.0.0.0", port: port)))
-try await app.runService()
+
+// The HTTP server runs as a task while AppKit owns the main thread. Music's Apple Events have to be
+// sent from the main thread (see MusicScript), and the menu bar item needs the AppKit run loop.
+Task {
+    do {
+        try await app.runService()
+    } catch {
+        print("server stopped: \(error)")
+    }
+    NSApp.terminate(nil)
+}
+
+let nsApp = NSApplication.shared
+nsApp.setActivationPolicy(.accessory)
+let menuBar = MenuBar(port: port)
+nsApp.run()

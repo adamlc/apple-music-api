@@ -1,4 +1,4 @@
-# itunes-api (Swift)
+# apple-music-api
 
 A small macOS HTTP server for querying and controlling the Music app, written in Swift.
 It is a rewrite of [maddox/itunes-api](https://github.com/maddox/itunes-api) (Node), intended for
@@ -36,23 +36,23 @@ empty object for AirPlay), invalid parameters return 400, and playlist `loved` u
 Requires macOS 14+ and Xcode (for the Swift toolchain).
 
     swift build -c release
-    PORT=10100 .build/release/itunes-api
+    PORT=10100 .build/release/apple-music-api
 
 `PORT` defaults to `10100`.
 
 ### As an app
 
     script/bundle
-    open -n build/itunes-api.app --env PORT=10100
+    open -n build/apple-music-api.app --env PORT=10100
 
 Launching the bundle through `open` (or launchd) makes it its own process as far as macOS is
-concerned, so the "control Music" permission prompt is for `itunes-api` itself rather than for the
+concerned, so the "control Music" permission prompt is for `apple-music-api` itself rather than for the
 terminal that started it. Running the bare binary from a terminal attributes the permission to that
 terminal instead.
 
 `script/bundle` signs ad hoc by default. An ad-hoc signature changes on every build, so macOS asks
 again after each rebuild; set `SIGN_IDENTITY` to a stable certificate to avoid that. The hardened
-runtime needs the Apple Events entitlement in `Resources/itunes-api.entitlements`, or macOS blocks
+runtime needs the Apple Events entitlement in `Resources/apple-music-api.entitlements`, or macOS blocks
 the app from controlling Music.
 
 ## Notes

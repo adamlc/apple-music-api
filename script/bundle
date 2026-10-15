@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds build/itunes-api.app: the release binary wrapped in an app bundle and signed.
+# Builds build/apple-music-api.app: the release binary wrapped in an app bundle and signed.
 #
 # SIGN_IDENTITY: codesign identity (default "-" = ad-hoc). An ad-hoc signature changes on every
 # build, so macOS asks for Music permission again after each rebuild; use a stable identity
@@ -7,16 +7,16 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-APP=build/itunes-api.app
+APP=build/apple-music-api.app
 IDENTITY="${SIGN_IDENTITY:--}"
 
 swift build -c release
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS"
-cp .build/release/itunes-api "$APP/Contents/MacOS/itunes-api"
+cp .build/release/apple-music-api "$APP/Contents/MacOS/apple-music-api"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 
-codesign --force --options runtime --entitlements Resources/itunes-api.entitlements --sign "$IDENTITY" "$APP"
+codesign --force --options runtime --entitlements Resources/apple-music-api.entitlements --sign "$IDENTITY" "$APP"
 codesign --verify --strict --verbose=2 "$APP"
 echo "Built $APP (signed with ${IDENTITY/#-/ad-hoc})"
