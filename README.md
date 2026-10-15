@@ -40,9 +40,20 @@ Requires macOS 14+ and Xcode (for the Swift toolchain).
 
 `PORT` defaults to `10100`.
 
-macOS will ask for permission to control Music. When launched from a terminal, that permission is
-attributed to the terminal app, not this binary. Bundling it as a signed `.app` is planned so it gets
-its own permission prompt.
+### As an app
+
+    script/bundle
+    open -n build/itunes-api.app --env PORT=10100
+
+Launching the bundle through `open` (or launchd) makes it its own process as far as macOS is
+concerned, so the "control Music" permission prompt is for `itunes-api` itself rather than for the
+terminal that started it. Running the bare binary from a terminal attributes the permission to that
+terminal instead.
+
+`script/bundle` signs ad hoc by default. An ad-hoc signature changes on every build, so macOS asks
+again after each rebuild; set `SIGN_IDENTITY` to a stable certificate to avoid that. The hardened
+runtime needs the Apple Events entitlement in `Resources/itunes-api.entitlements`, or macOS blocks
+the app from controlling Music.
 
 ## Notes
 
