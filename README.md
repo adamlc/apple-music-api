@@ -7,15 +7,29 @@ use with the Home Assistant [iTunes integration](https://www.home-assistant.io/i
 It talks to Music in-process via AppleScript (`NSAppleScript`) and serves JSON with
 [Hummingbird](https://github.com/hummingbird-project/hummingbird).
 
-## Status
+## API
 
-Prototype. Implemented:
+Matches the Node version. `PUT` endpoints that change playback return the same JSON as `/now_playing`.
+Form fields can be sent as `application/x-www-form-urlencoded` bodies or query parameters.
 
-- `GET /_ping`
-- `GET /now_playing`
+    GET /_ping
+    GET /now_playing                 (cached for 1s; cleared by any command)
+    GET /artwork                     (image bytes, 404 if none)
+    PUT /play | /pause | /playpause | /stop | /previous | /next
+    PUT /volume          level=0-100
+    PUT /mute            muted=true|false
+    PUT /shuffle         mode=songs|albums|groupings|off
+    PUT /repeat          mode=all|one|off
+    GET /playlists
+    PUT /playlists/:id/play
+    GET /airplay_devices
+    GET /airplay_devices/:id
+    PUT /airplay_devices/:id/on | /off
+    PUT /airplay_devices/:id/volume    level=0-100
 
-Still to port from the Node version: play/pause/playpause/stop/next/previous, volume, mute,
-shuffle, repeat, playlists, AirPlay devices and artwork.
+Differences from the Node version: unknown playlists or AirPlay devices return 404 (Node returned an
+empty object for AirPlay), invalid parameters return 400, and playlist `loved` uses the playlist's
+`favorited` flag.
 
 ## Running
 
