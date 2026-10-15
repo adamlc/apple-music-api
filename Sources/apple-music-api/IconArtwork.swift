@@ -62,21 +62,21 @@ enum IconArtwork {
             ending: NSColor(red: 0.85, green: 0.06, blue: 0.21, alpha: 1)
         )?.draw(in: squircle.bounds, angle: -90)
 
-        // Two server units behind the note: translucent slabs with a status light and vents.
-        for y in [190.0, 306.0] as [CGFloat] {
-            let slab = NSBezierPath(roundedRect: NSRect(x: 220, y: y, width: 584, height: 100), xRadius: 30, yRadius: 30)
+        // Two server units under the note: translucent slabs with a status light and vents.
+        for y in [205.0, 305.0] as [CGFloat] {
+            let slab = NSBezierPath(roundedRect: NSRect(x: 272, y: y, width: 480, height: 80), xRadius: 24, yRadius: 24)
             NSColor.white.withAlphaComponent(0.24).setFill()
             slab.fill()
             NSColor.white.withAlphaComponent(0.55).setFill()
-            NSBezierPath(ovalIn: NSRect(x: 258, y: y + 37, width: 26, height: 26)).fill()
+            NSBezierPath(ovalIn: NSRect(x: 302, y: y + 29, width: 22, height: 22)).fill()
             for i in 0..<3 {
-                NSBezierPath(roundedRect: NSRect(x: 640 + CGFloat(i) * 46, y: y + 28, width: 20, height: 44), xRadius: 10, yRadius: 10).fill()
+                NSBezierPath(roundedRect: NSRect(x: 590 + CGFloat(i) * 40, y: y + 22, width: 16, height: 36), xRadius: 8, yRadius: 8).fill()
             }
         }
 
         // The note, with a soft shadow so it lifts off the server units.
-        var t = AffineTransform(scaleByX: 5.0, byY: 5.0)
-        t.append(AffineTransform(translationByX: 262, byY: 395))
+        var t = AffineTransform(scaleByX: 4.4, byY: 4.4)
+        t.append(AffineTransform(translationByX: 296, byY: 419))
         let noteShadow = NSShadow()
         noteShadow.shadowColor = NSColor.black.withAlphaComponent(0.25)
         noteShadow.shadowBlurRadius = 18
