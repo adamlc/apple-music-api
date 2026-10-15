@@ -55,6 +55,13 @@ again after each rebuild; set `SIGN_IDENTITY` to a stable certificate to avoid t
 runtime needs the Apple Events entitlement in `Resources/apple-music-api.entitlements`, or macOS blocks
 the app from controlling Music.
 
+### Menu bar
+
+The app lives in the menu bar (no Dock icon). From there you can change the port (it restarts to
+apply it) and toggle Start at Login. A port saved from the menu takes priority over the `PORT`
+environment variable. The app icon and menu bar glyph are drawn in code
+(`Sources/apple-music-api/IconArtwork.swift`); `script/bundle` renders them into an `.icns`.
+
 ## Notes
 
 - AppleScript must run on the main thread. Running it on a background queue hangs while waiting for

@@ -2,6 +2,12 @@ import AppKit
 import Foundation
 import Hummingbird
 
+// `script/bundle` uses this to render the app icon; it never starts the server.
+if let flag = CommandLine.arguments.firstIndex(of: "--render-icons"), CommandLine.arguments.count > flag + 1 {
+    try IconArtwork.writeIconset(to: URL(fileURLWithPath: CommandLine.arguments[flag + 1]))
+    exit(0)
+}
+
 let music = MusicScript()
 let nowPlayingCache = NowPlayingCache(music: music)
 let router = Router()
@@ -166,7 +172,7 @@ router.put("/airplay_devices/:id/volume") { request, context in
 
 // MARK: - Server
 
-let port = Int(ProcessInfo.processInfo.environment["PORT"] ?? "") ?? 10100
+let port = Settings.port
 let app = Application(router: router, configuration: .init(address: .hostname("0.0.0.0", port: port)))
 
 // The HTTP server runs as a task while AppKit owns the main thread. Music's Apple Events have to be
