@@ -4,6 +4,7 @@ import Hummingbird
 let music = MusicScript()
 let nowPlayingCache = NowPlayingCache(music: music)
 let router = Router()
+router.add(middleware: LogRequestsMiddleware(.info))
 
 // MARK: - Helpers
 
@@ -46,9 +47,11 @@ func handle(_ body: () async throws -> Response) async -> Response {
 }
 
 /// Runs a command, then responds with the fresh now-playing state (like the Node version).
-func command(_ action: () async throws -> Void) async -> Response {
+/// `settle` gives Music a moment to finish changing track before we read its state back.
+func command(settle: Duration = .zero, _ action: () async throws -> Void) async -> Response {
     await handle {
         try await action()
+        if settle > .zero { try await Task.sleep(for: settle) }
         await nowPlayingCache.invalidate()
         return try jsonResponse(try await nowPlayingCache.get())
     }
@@ -75,8 +78,8 @@ router.put("/play") { _, _ in await command { try await music.play() } }
 router.put("/pause") { _, _ in await command { try await music.pause() } }
 router.put("/playpause") { _, _ in await command { try await music.playPause() } }
 router.put("/stop") { _, _ in await command { try await music.stop() } }
-router.put("/previous") { _, _ in await command { try await music.previous() } }
-router.put("/next") { _, _ in await command { try await music.next() } }
+router.put("/previous") { _, _ in await command(settle: .milliseconds(250)) { try await music.previous() } }
+router.put("/next") { _, _ in await command(settle: .milliseconds(250)) { try await music.next() } }
 
 router.put("/volume") { request, _ in
     let form = try await formValues(request)
@@ -117,7 +120,7 @@ router.get("/playlists") { _, _ in
 router.put("/playlists/:id/play") { _, context in
     let id = context.parameters.get("id") ?? ""
     var found = true
-    let response = await command { found = try await music.playPlaylist(id: id) }
+    let response = await command(settle: .milliseconds(500)) { found = try await music.playPlaylist(id: id) }
     return found ? response : Response(status: .notFound)
 }
 
