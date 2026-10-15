@@ -53,18 +53,21 @@ tell application "Music"
 end tell
 """
 
-extension MusicScript {
-    func nowPlaying() async throws -> NowPlaying {
-        let d = try await run(nowPlayingScript)
+extension NowPlaying {
+    /// Builds the response from the list returned by `nowPlayingScript`. `emulatedMuteVolume` is the
+    /// volume to restore while mute is emulated (see `MusicScript.setMuted`), nil when not muted.
+    init(descriptor d: NSAppleEventDescriptor, emulatedMuteVolume: Int?) {
         func s(_ i: Int) -> String { d.atIndex(i)?.stringValue ?? "" }
         let state = s(1)
-        guard d.numberOfItems > 1 else { return NowPlaying(player_state: state) }
+        guard d.numberOfItems > 1 else {
+            self.init(player_state: state)
+            return
+        }
 
         let year = d.atIndex(6)?.int32Value ?? 0
         let album = year > 0 ? "\(s(5)) (\(year))" : s(5)
         let pl = s(12)
-        let emulatedMuteVolume = mutedVolume.withLock { $0 }
-        return NowPlaying(
+        self.init(
             player_state: state,
             id: s(2), name: s(3), artist: s(4), album: album,
             playlist: (pl == "Music" || pl == "Library") ? "" : pl,
@@ -73,5 +76,12 @@ extension MusicScript {
             repeatMode: s(9),
             shuffle: Shuffle(mode: (d.atIndex(10)?.booleanValue ?? false) && !s(11).isEmpty ? s(11) : nil)
         )
+    }
+}
+
+extension MusicScript {
+    func nowPlaying() async throws -> NowPlaying {
+        let d = try await run(nowPlayingScript)
+        return NowPlaying(descriptor: d, emulatedMuteVolume: mutedVolume.withLock { $0 })
     }
 }

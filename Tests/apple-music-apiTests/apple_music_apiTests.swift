@@ -1,0 +1,144 @@
+import AppKit
+import Foundation
+import Testing
+@testable import apple_music_api
+
+// MARK: - Helpers
+
+/// A descriptor shaped like the list returned by the now-playing script.
+private func playingList(
+    state: String = "playing", year: Int32 = 2013, playlist: String = "Summer Jams",
+    volume: Int32 = 60, muted: Bool = false, repeatMode: String = "all",
+    shuffleEnabled: Bool = true, shuffleMode: String = "songs"
+) -> NSAppleEventDescriptor {
+    let list = NSAppleEventDescriptor.list()
+    let items: [NSAppleEventDescriptor] = [
+        .init(string: state), .init(string: "AC4FFD2271422B47"), .init(string: "Forever"),
+        .init(string: "HAIM"), .init(string: "Days Are Gone"), .init(int32: year),
+        .init(int32: volume), .init(boolean: muted), .init(string: repeatMode),
+        .init(boolean: shuffleEnabled), .init(string: shuffleMode), .init(string: playlist),
+    ]
+    for (i, item) in items.enumerated() { list.insert(item, at: i + 1) }
+    return list
+}
+
+private func json(_ value: some Encodable) throws -> [String: Any] {
+    let data = try JSONEncoder().encode(value)
+    return try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+}
+
+// MARK: - parameterize
+
+@Suite struct ParameterizeTests {
+    @Test(arguments: [
+        ("Outkast: The '90s", "outkast-the-90s"),
+        ("Music Videos", "music-videos"),
+        ("  Rock & Roll!! ", "rock-roll"),
+        ("Café Del Mar", "cafe-del-mar"),
+        ("2000s Hits Essentials", "2000s-hits-essentials"),
+        ("", ""),
+    ])
+    func producesPlaylistIDs(name: String, expected: String) {
+        #expect(parameterize(name) == expected)
+    }
+}
+
+// MARK: - Request parsing
+
+@Suite struct FormTests {
+    @Test func parsesBodyFields() {
+        #expect(parseForm("level=20&mode=songs") == ["level": "20", "mode": "songs"])
+    }
+
+    @Test func decodesPercentEscapesAndPlus() {
+        #expect(parseForm("name=a%20b+c") == ["name": "a b c"])
+    }
+
+    @Test func bodyWinsOverQuery() {
+        let values = requestValues(body: "level=20", query: "level=99&mode=off")
+        #expect(values == ["level": "20", "mode": "off"])
+    }
+
+    @Test func emptyInputGivesNoValues() {
+        #expect(requestValues(body: "", query: nil).isEmpty)
+    }
+
+    @Test(arguments: [("true", true), ("1", true), ("ON", true), ("false", false), ("off", false)])
+    func parsesBooleans(text: String, expected: Bool) {
+        #expect(parseBool(text) == expected)
+    }
+
+    @Test func rejectsUnknownBooleans() {
+        #expect(parseBool("maybe") == nil)
+        #expect(parseBool(nil) == nil)
+    }
+}
+
+// MARK: - /now_playing response
+
+@Suite struct NowPlayingTests {
+    // Home Assistant only treats shuffle as on when this is the string "songs".
+    @Test func shuffleIsTheModeStringWhenOn() throws {
+        let np = NowPlaying(descriptor: playingList(), emulatedMuteVolume: nil)
+        #expect(try json(np)["shuffle"] as? String == "songs")
+    }
+
+    @Test func shuffleIsFalseWhenOff() throws {
+        let np = NowPlaying(descriptor: playingList(shuffleEnabled: false), emulatedMuteVolume: nil)
+        #expect(try json(np)["shuffle"] as? Bool == false)
+    }
+
+    @Test func appendsYearToAlbum() {
+        let np = NowPlaying(descriptor: playingList(), emulatedMuteVolume: nil)
+        #expect(np.album == "Days Are Gone (2013)")
+    }
+
+    @Test func omitsYearWhenZero() {
+        let np = NowPlaying(descriptor: playingList(year: 0), emulatedMuteVolume: nil)
+        #expect(np.album == "Days Are Gone")
+    }
+
+    @Test(arguments: ["Music", "Library"])
+    func blanksTheDefaultPlaylists(name: String) {
+        let np = NowPlaying(descriptor: playingList(playlist: name), emulatedMuteVolume: nil)
+        #expect(np.playlist == "")
+    }
+
+    @Test func keepsOtherPlaylistNames() {
+        let np = NowPlaying(descriptor: playingList(), emulatedMuteVolume: nil)
+        #expect(np.playlist == "Summer Jams")
+    }
+
+    @Test func stoppedPlayerHasOnlyAState() throws {
+        let list = NSAppleEventDescriptor.list()
+        list.insert(.init(string: "stopped"), at: 1)
+        let object = try json(NowPlaying(descriptor: list, emulatedMuteVolume: nil))
+        #expect(object["player_state"] as? String == "stopped")
+        #expect(object.count == 1)
+    }
+
+    @Test func emulatedMuteReportsMutedAndTheRealVolume() {
+        // While muted we've set Music's volume to 0, but clients should still see the user's volume.
+        let np = NowPlaying(descriptor: playingList(volume: 0), emulatedMuteVolume: 60)
+        #expect(np.muted == true)
+        #expect(np.volume == 60)
+    }
+
+    @Test func notMutedByDefault() {
+        let np = NowPlaying(descriptor: playingList(), emulatedMuteVolume: nil)
+        #expect(np.muted == false)
+        #expect(np.volume == 60)
+    }
+}
+
+// MARK: - Command validation (rejected before Music is contacted)
+
+@Suite struct CommandValidationTests {
+    @Test func rejectsUnknownShuffleModes() async {
+        await #expect(throws: CommandError.self) { try await MusicScript().setShuffle("bogus") }
+    }
+
+    @Test func rejectsUnknownRepeatModes() async {
+        await #expect(throws: CommandError.self) { try await MusicScript().setRepeat("bogus") }
+    }
+}

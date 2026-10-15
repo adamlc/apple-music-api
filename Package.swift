@@ -12,5 +12,9 @@ let package = Package(
             name: "apple-music-api",
             dependencies: [.product(name: "Hummingbird", package: "hummingbird")]
         ),
+        .testTarget(
+            name: "apple-music-apiTests",
+            dependencies: ["apple-music-api"]
+        ),
     ]
 )

@@ -20,25 +20,10 @@ func jsonResponse<T: Encodable>(_ value: T, status: HTTPResponse.Status = .ok) t
     return Response(status: status, headers: [.contentType: "application/json"], body: .init(byteBuffer: .init(data: data)))
 }
 
-/// Form-encoded body fields (as sent by Home Assistant / curl -d), falling back to query parameters.
 func formValues(_ request: Request) async throws -> [String: String] {
-    var components = URLComponents()
     var buffer = try await request.body.collect(upTo: 1 << 16)
-    components.query = buffer.readString(length: buffer.readableBytes)
-    var values: [String: String] = [:]
-    for item in components.queryItems ?? [] { values[item.name] = item.value ?? "" }
-    for item in URLComponents(string: "?" + (request.uri.query ?? ""))?.queryItems ?? [] where values[item.name] == nil {
-        values[item.name] = item.value ?? ""
-    }
-    return values
-}
-
-func parseBool(_ s: String?) -> Bool? {
-    switch s?.lowercased() {
-    case "true", "1", "yes", "on": return true
-    case "false", "0", "no", "off": return false
-    default: return nil
-    }
+    let body = buffer.readString(length: buffer.readableBytes) ?? ""
+    return requestValues(body: body, query: request.uri.query)
 }
 
 /// Runs `body`, maps failures to HTTP errors.
