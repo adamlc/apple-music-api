@@ -23,15 +23,17 @@ enum IconArtwork {
         head(cx: 26, cy: 21)
         head(cx: 71, cy: 13)
 
-        // Each stem's right edge sits on the right edge of its (tilted) notehead.
-        shapes.append(NSBezierPath(rect: NSRect(x: 33.6, y: 21, width: 6, height: 68)))
-        shapes.append(NSBezierPath(rect: NSRect(x: 78.6, y: 13, width: 6, height: 66)))
+        // Each stem's right edge sits on the right edge of its (tilted) notehead. The tilted oval's
+        // rightmost point (x = cx + 13.64) is 2.02 above its centre, so start the stem there; any
+        // lower and its corner pokes out past the curve of the head.
+        shapes.append(NSBezierPath(rect: NSRect(x: 33.64, y: 23.02, width: 6, height: 65.98)))
+        shapes.append(NSBezierPath(rect: NSRect(x: 78.64, y: 15.02, width: 6, height: 63.98)))
 
         let beam = NSBezierPath()
-        beam.move(to: NSPoint(x: 33.6, y: 91))
-        beam.line(to: NSPoint(x: 84.6, y: 81))
-        beam.line(to: NSPoint(x: 84.6, y: 66))
-        beam.line(to: NSPoint(x: 33.6, y: 76))
+        beam.move(to: NSPoint(x: 33.64, y: 91))
+        beam.line(to: NSPoint(x: 84.64, y: 81))
+        beam.line(to: NSPoint(x: 84.64, y: 66))
+        beam.line(to: NSPoint(x: 33.64, y: 76))
         beam.close()
         shapes.append(beam)
         return shapes
