@@ -1,5 +1,22 @@
 import Foundation
 
+/// Encodes as the mode ("songs", "albums", "groupings") when shuffle is on, or `false` when off.
+/// Home Assistant checks for the string "songs", so this must not be a plain bool.
+struct Shuffle: Codable {
+    var mode: String?
+
+    init(mode: String?) { self.mode = mode }
+
+    init(from decoder: Decoder) throws {
+        mode = try? decoder.singleValueContainer().decode(String.self)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        if let mode { try c.encode(mode) } else { try c.encode(false) }
+    }
+}
+
 struct NowPlaying: Codable {
     var player_state: String
     var id: String?
@@ -10,7 +27,7 @@ struct NowPlaying: Codable {
     var volume: Int?
     var muted: Bool?
     var repeatMode: String?
-    var shuffle: Bool?
+    var shuffle: Shuffle?
 
     enum CodingKeys: String, CodingKey {
         case player_state, id, name, artist, album, playlist, volume, muted, shuffle
@@ -54,7 +71,7 @@ extension MusicScript {
             volume: emulatedMuteVolume ?? Int(d.atIndex(7)?.int32Value ?? 0),
             muted: emulatedMuteVolume != nil || (d.atIndex(8)?.booleanValue ?? false),
             repeatMode: s(9),
-            shuffle: (d.atIndex(10)?.booleanValue ?? false) && !s(11).isEmpty
+            shuffle: Shuffle(mode: (d.atIndex(10)?.booleanValue ?? false) && !s(11).isEmpty ? s(11) : nil)
         )
     }
 }
