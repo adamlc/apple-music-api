@@ -13,10 +13,11 @@ The maintainer is newer to Swift, so keep code simple and explain Swift-specific
     script/bundle           # build/Apple Music API.app (signed ad hoc)
     script/install          # bundle, copy to ~/Applications, quit the running copy, start the new one
 
-For manual testing against a real Music, run a second copy on another port so it doesn't clash with
-the installed one: `open -n "build/Apple Music API.app" --env PORT=10102` (`PORT` overrides the port
-saved from the menu bar). Testing against a real Music changes what's playing, AirPlay selection and
-volume, so put things back (volume, shuffle, repeat, AirPlay devices) afterwards.
+The port is set from the menu bar (saved in user defaults, default 8181); there is no env var or flag.
+To test a build without disturbing the installed app, quit the installed one from its menu bar item,
+run `open "build/Apple Music API.app"`, and run `script/install` afterwards to put the installed copy
+back. Testing against a real Music changes what's playing, AirPlay selection and volume, so put
+things back (volume, shuffle, repeat, AirPlay devices) afterwards.
 
 ## Things that are easy to get wrong
 
