@@ -10,6 +10,7 @@ if let flag = CommandLine.arguments.firstIndex(of: "--render-icons"), CommandLin
 
 let music = MusicScript()
 let nowPlayingCache = NowPlayingCache(music: music)
+let artworkLookup = ArtworkLookup(music: music)
 let router = Router()
 router.add(middleware: LogRequestsMiddleware(.info))
 
@@ -68,7 +69,7 @@ router.get("/now_playing") { _, _ in
 
 router.get("/artwork") { _, _ in
     await handle {
-        guard let art = try await music.artwork() else { return Response(status: .notFound) }
+        guard let art = try await artworkLookup.artwork() else { return Response(status: .notFound) }
         return Response(status: .ok, headers: [.contentType: art.contentType], body: .init(byteBuffer: .init(data: art.data)))
     }
 }

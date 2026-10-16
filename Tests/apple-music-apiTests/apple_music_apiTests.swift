@@ -173,3 +173,48 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
         await #expect(throws: CommandError.self) { try await MusicScript().setRepeat("bogus") }
     }
 }
+
+// MARK: - Artwork search fallback
+
+@Suite struct ArtworkSearchTests {
+    private let track = TrackIdentity(persistentID: "ID", name: "Headlights", artist: "Moyka", album: "BULLSEYE")
+
+    private func result(_ artist: String, _ name: String, _ album: String, _ url: String = "https://x.test/a/100x100bb.jpg") -> ArtworkSearch.Result {
+        .init(artistName: artist, trackName: name, collectionName: album, artworkUrl100: url)
+    }
+
+    @Test func prefersTheMatchingAlbum() {
+        let results = [
+            result("Moyka", "Headlights", "Ultraviolet - Single", "https://x.test/single/100x100bb.jpg"),
+            result("Moyka", "Headlights", "BULLSEYE", "https://x.test/bullseye/100x100bb.jpg"),
+        ]
+        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track)?.absoluteString == "https://x.test/bullseye/600x600bb.jpg")
+    }
+
+    @Test func fallsBackToTheFirstMatchingTrack() {
+        let results = [result("Moyka", "Headlights", "Some Compilation", "https://x.test/comp/100x100bb.jpg")]
+        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track)?.absoluteString == "https://x.test/comp/600x600bb.jpg")
+    }
+
+    @Test func ignoresDifferentTracksAndArtists() {
+        let results = [result("Someone Else", "Headlights", "BULLSEYE"), result("Moyka", "Other Song", "BULLSEYE")]
+        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track) == nil)
+    }
+
+    @Test func matchesCaseInsensitively() {
+        let results = [result("MOYKA", "headlights", "bullseye")]
+        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track) != nil)
+    }
+
+    @Test func searchURLEncodesTheTrack() throws {
+        let url = try #require(ArtworkSearch.searchURL(for: TrackIdentity(persistentID: "ID", name: "Rock & Roll", artist: "A B", album: "C")))
+        #expect(url.absoluteString.hasPrefix("https://itunes.apple.com/search?"))
+        #expect(!url.absoluteString.contains(" "))
+        #expect(url.absoluteString.contains("Rock%20%26%20Roll"))
+    }
+
+    @Test func sniffsImageTypes() {
+        #expect(ArtworkSearch.contentType(for: Data([0xFF, 0xD8, 0xFF, 0xE0])) == "image/jpeg")
+        #expect(ArtworkSearch.contentType(for: Data([0x89, 0x50, 0x4E, 0x47])) == "image/png")
+    }
+}
