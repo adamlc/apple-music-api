@@ -83,6 +83,12 @@ script/install      # bundle, install to ~/Applications and restart
 The app is signed ad hoc, so macOS may ask for permission again after a rebuild. See
 [CLAUDE.md](CLAUDE.md) for how it works, and for the Apple Events and macOS permission pitfalls.
 
+## A note on how it was made
+
+This project is vibe coded: it was written with [Claude Code](https://claude.com/claude-code), with me
+steering and testing it against my own Home Assistant setup. It has unit tests and has worked well for
+me, but it's only been tried on one setup, so expect rough edges and read the code before you trust it.
+
 ## Licence
 
 MIT, see [LICENSE](LICENSE). Based on [itunes-api](https://github.com/maddox/itunes-api) by Jon Maddox.
