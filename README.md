@@ -29,16 +29,17 @@ This builds the app, copies it to `~/Applications` and starts it.
 ## Setup
 
 1. macOS asks whether Apple Music API may control Music the first time it's used. Choose **Allow**.
-2. Click the menu bar icon to change the port (default `10100`) or turn on **Start at Login**.
-3. In Home Assistant, add the server to `configuration.yaml`. The integration defaults to port 8181, so
-   set the port to match:
+2. Click the menu bar icon to change the port (default `8181`) or turn on **Start at Login**.
+3. In Home Assistant, add the server to `configuration.yaml`:
 
    ```yaml
    media_player:
      - platform: itunes
        host: 192.168.1.50   # the Mac running Apple Music API
-       port: 10100
    ```
+
+   The port is `8181` in both, so there's nothing else to set. If you change the port in the menu
+   bar, add a matching `port:` line.
 
 ## API
 

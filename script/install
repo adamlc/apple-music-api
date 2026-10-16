@@ -26,5 +26,10 @@ mkdir -p "$HOME/Applications"
 rm -rf "$DEST"
 ditto "build/$NAME.app" "$DEST"
 
-open "$DEST"
+# LaunchServices can still be tearing down the old instance for a moment, which makes `open` fail
+# (error -600), so retry briefly.
+for _ in {1..10}; do
+  open "$DEST" && break
+  sleep 1
+done
 echo "Installed and started $DEST"

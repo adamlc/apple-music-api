@@ -5,7 +5,7 @@ Swift menu bar app that serves an HTTP API for the macOS Music app. It's a drop-
 [iTunes integration](https://www.home-assistant.io/integrations/itunes/), so the JSON shapes and
 endpoints must stay compatible with what that integration sends and reads.
 
-The owner is new to Swift and knows Go. Keep code simple and explain Swift-specific choices.
+The maintainer is newer to Swift, so keep code simple and explain Swift-specific choices.
 
 ## Commands
 
@@ -14,9 +14,9 @@ The owner is new to Swift and knows Go. Keep code simple and explain Swift-speci
     script/install          # bundle, copy to ~/Applications, quit the running copy, start the new one
 
 For manual testing against a real Music, run a second copy on another port so it doesn't clash with
-the installed one on 10100: `open -n "build/Apple Music API.app" --env PORT=10102`. (A port saved from
-the menu bar overrides `PORT`.) Testing changes what's playing, AirPlay selection and volume. The
-owner is fine with that, but put things back (volume, shuffle, repeat, AirPlay devices) afterwards.
+the installed one: `open -n "build/Apple Music API.app" --env PORT=10102` (`PORT` overrides the port
+saved from the menu bar). Testing against a real Music changes what's playing, AirPlay selection and
+volume, so put things back (volume, shuffle, repeat, AirPlay devices) afterwards.
 
 ## Things that are easy to get wrong
 
@@ -68,7 +68,7 @@ owner is fine with that, but put things back (volume, shuffle, repeat, AirPlay d
 
 ## Repo
 
-- Private repo: github.com/adamlc/apple-music-api. Commits use `an email address`.
+- Repo: github.com/adamlc/apple-music-api.
 - The old Node app and an abandoned Go rewrite live separately in `~/Sites/itunes-api`; they are not
   part of this repo.
 - Not done: Developer ID signing and notarization (needed to distribute to others), and a Home
