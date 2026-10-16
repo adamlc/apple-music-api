@@ -119,14 +119,16 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
         #expect(try json(np)["shuffle"] as? Bool == false)
     }
 
-    @Test func appendsYearToAlbum() {
+    @Test func albumIsTheNameAloneWithTheYearSeparate() throws {
         let np = NowPlaying(descriptor: playingList(), emulatedMuteVolume: nil)
-        #expect(np.album == "Days Are Gone (2013)")
+        #expect(np.album == "Days Are Gone")
+        #expect(try json(np)["year"] as? Int == 2013)
     }
 
-    @Test func omitsYearWhenZero() {
+    @Test func omitsYearWhenZero() throws {
         let np = NowPlaying(descriptor: playingList(year: 0), emulatedMuteVolume: nil)
         #expect(np.album == "Days Are Gone")
+        #expect(try json(np)["year"] == nil)
     }
 
     @Test(arguments: ["Music", "Library"])

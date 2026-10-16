@@ -74,7 +74,7 @@ PUT /airplay_devices/:id/volume    level=0-100
   requests return `503`. Only play, playpause and playing a playlist launch Music.
 - It's compatible with the original itunes-api, with a few differences: unknown playlists or AirPlay
   devices return `404`, invalid parameters return `400`, and a playlist's `loved` comes from its
-  favourite flag.
+  favourite flag, and `album` is just the album name, with the release year in a separate `year` field.
 
 ## Development
 

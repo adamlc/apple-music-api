@@ -23,6 +23,7 @@ struct NowPlaying: Codable {
     var name: String?
     var artist: String?
     var album: String?
+    var year: Int?
     var playlist: String?
     var volume: Int?
     var muted: Bool?
@@ -30,7 +31,7 @@ struct NowPlaying: Codable {
     var shuffle: Shuffle?
 
     enum CodingKeys: String, CodingKey {
-        case player_state, id, name, artist, album, playlist, volume, muted, shuffle
+        case player_state, id, name, artist, album, year, playlist, volume, muted, shuffle
         case repeatMode = "repeat"
     }
 }
@@ -65,11 +66,10 @@ extension NowPlaying {
         }
 
         let year = d.atIndex(6)?.int32Value ?? 0
-        let album = year > 0 ? "\(s(5)) (\(year))" : s(5)
         let pl = s(12)
         self.init(
             player_state: state,
-            id: s(2), name: s(3), artist: s(4), album: album,
+            id: s(2), name: s(3), artist: s(4), album: s(5), year: year > 0 ? Int(year) : nil,
             playlist: (pl == "Music" || pl == "Library") ? "" : pl,
             volume: emulatedMuteVolume ?? Int(d.atIndex(7)?.int32Value ?? 0),
             muted: emulatedMuteVolume != nil || (d.atIndex(8)?.booleanValue ?? false),
