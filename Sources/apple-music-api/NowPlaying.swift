@@ -36,7 +36,9 @@ struct NowPlaying: Codable {
     }
 }
 
-// One Apple Event round trip, asking only for the fields we actually need.
+// Everything in one script call. Each track field is read directly (`name of current track`) with its
+// own `try`, not through `set t to current track`: that form throws -1728 for tracks that aren't in
+// the library on some macOS versions (reported on macOS 26), and a missing field shouldn't lose the rest.
 private let nowPlayingScript = """
 tell application "Music"
     set ps to player state as text
@@ -45,12 +47,28 @@ tell application "Music"
     try
         set pl to name of current playlist
     end try
+    set tPid to ""
     try
-        set t to current track
-    on error
-        return {ps}
+        set tPid to persistent ID of current track
     end try
-    return {ps, persistent ID of t, name of t, artist of t, album of t, year of t, sound volume, mute, song repeat as text, shuffle enabled, shuffle mode as text, pl}
+    set tName to ""
+    try
+        set tName to name of current track
+    end try
+    set tArtist to ""
+    try
+        set tArtist to artist of current track
+    end try
+    set tAlbum to ""
+    try
+        set tAlbum to album of current track
+    end try
+    set tYear to 0
+    try
+        set tYear to year of current track
+    end try
+    if tPid is "" and tName is "" then return {ps}
+    return {ps, tPid, tName, tArtist, tAlbum, tYear, sound volume, mute, song repeat as text, shuffle enabled, shuffle mode as text, pl}
 end tell
 """
 

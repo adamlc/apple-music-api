@@ -64,18 +64,35 @@ enum ArtworkSearch {
         }
         let candidates = results.filter { same($0.trackName, track.name) && same($0.artistName, track.artist) && $0.artworkUrl100 != nil }
         let match = candidates.first { same($0.collectionName, track.album) } ?? candidates.first
-        guard let thumbnail = match?.artworkUrl100 else { return nil }
-        return URL(string: thumbnail.replacingOccurrences(of: "100x100bb", with: "\(size)x\(size)bb"))
+        guard let thumbnail = match?.artworkUrl100,
+              let url = URL(string: thumbnail.replacingOccurrences(of: "100x100bb", with: "\(size)x\(size)bb")),
+              isSafeArtworkURL(url)
+        else { return nil }
+        return url
+    }
+
+    /// The artwork link comes from a network response, so only follow HTTPS links to Apple's image hosts.
+    static func isSafeArtworkURL(_ url: URL) -> Bool {
+        guard url.scheme == "https", let host = url.host?.lowercased() else { return false }
+        return host == "mzstatic.com" || host.hasSuffix(".mzstatic.com")
+            || host == "apple.com" || host.hasSuffix(".apple.com")
+    }
+
+    private static let maxTermLength = 120
+    private static let maxSearchBytes = 1 * 1024 * 1024
+    private static let maxImageBytes = 5 * 1024 * 1024
+
+    /// Percent-encodes everything except unreserved characters. URLQueryItem leaves `+` as it is, and
+    /// the search service then reads it as a space ("Florence + the Machine" would lose its plus).
+    private static func encode(_ text: String) -> String {
+        let unreserved = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+        return text.addingPercentEncoding(withAllowedCharacters: unreserved) ?? ""
     }
 
     static func searchURL(for track: TrackIdentity) -> URL? {
-        var components = URLComponents(string: "https://itunes.apple.com/search")
-        components?.queryItems = [
-            URLQueryItem(name: "term", value: "\(track.artist) \(track.name) \(track.album)"),
-            URLQueryItem(name: "entity", value: "song"),
-            URLQueryItem(name: "limit", value: "10"),
-        ]
-        return components?.url
+        // Metadata can be arbitrarily long, so cap each part.
+        let term = [track.artist, track.name, track.album].map { String($0.prefix(maxTermLength)) }.joined(separator: " ")
+        return URL(string: "https://itunes.apple.com/search?term=\(encode(term))&entity=song&limit=10")
     }
 
     static func contentType(for data: Data) -> String {
@@ -85,19 +102,30 @@ enum ArtworkSearch {
         return "application/octet-stream"
     }
 
-    static func fetch(for track: TrackIdentity) async -> ArtworkImage? {
-        guard let searchURL = searchURL(for: track) else { return nil }
-        var request = URLRequest(url: searchURL)
-        request.timeoutInterval = 5
-        guard let (body, _) = try? await URLSession.shared.data(for: request),
-              let response = try? JSONDecoder().decode(Response.self, from: body),
-              let imageURL = bestArtworkURL(in: response.results, for: track)
-        else { return nil }
+    private static let session: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 5
+        return URLSession(configuration: configuration)
+    }()
 
-        var imageRequest = URLRequest(url: imageURL)
-        imageRequest.timeoutInterval = 5
-        guard let (data, _) = try? await URLSession.shared.data(for: imageRequest), data.count > 8 else { return nil }
-        return ArtworkImage(data: data, contentType: contentType(for: data))
+    /// GET `url`, accepting only a 200 response within `maxBytes`.
+    private static func download(_ url: URL, maxBytes: Int) async -> (data: Data, mimeType: String)? {
+        guard let (data, response) = try? await session.data(from: url),
+              let http = response as? HTTPURLResponse, http.statusCode == 200,
+              data.count <= maxBytes
+        else { return nil }
+        return (data, http.value(forHTTPHeaderField: "Content-Type")?.lowercased() ?? "")
+    }
+
+    static func fetch(for track: TrackIdentity) async -> ArtworkImage? {
+        guard let searchURL = searchURL(for: track),
+              let search = await download(searchURL, maxBytes: maxSearchBytes),
+              let response = try? JSONDecoder().decode(Response.self, from: search.data),
+              let imageURL = bestArtworkURL(in: response.results, for: track),
+              let image = await download(imageURL, maxBytes: maxImageBytes),
+              image.mimeType.hasPrefix("image/"), image.data.count > 8
+        else { return nil }
+        return ArtworkImage(data: image.data, contentType: contentType(for: image.data))
     }
 }
 
@@ -107,7 +135,7 @@ actor ArtworkLookup {
     private let music: MusicScript
     private var cache: [String: ArtworkImage?] = [:]
     private var order: [String] = []
-    private let limit = 20
+    private let limit = 50
 
     init(music: MusicScript) { self.music = music }
 

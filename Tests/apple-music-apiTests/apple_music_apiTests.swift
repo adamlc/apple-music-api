@@ -181,21 +181,21 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
 @Suite struct ArtworkSearchTests {
     private let track = TrackIdentity(persistentID: "ID", name: "Headlights", artist: "Moyka", album: "BULLSEYE")
 
-    private func result(_ artist: String, _ name: String, _ album: String, _ url: String = "https://x.test/a/100x100bb.jpg") -> ArtworkSearch.Result {
+    private func result(_ artist: String, _ name: String, _ album: String, _ url: String = "https://is1-ssl.mzstatic.com/a/100x100bb.jpg") -> ArtworkSearch.Result {
         .init(artistName: artist, trackName: name, collectionName: album, artworkUrl100: url)
     }
 
     @Test func prefersTheMatchingAlbum() {
         let results = [
-            result("Moyka", "Headlights", "Ultraviolet - Single", "https://x.test/single/100x100bb.jpg"),
-            result("Moyka", "Headlights", "BULLSEYE", "https://x.test/bullseye/100x100bb.jpg"),
+            result("Moyka", "Headlights", "Ultraviolet - Single", "https://is1-ssl.mzstatic.com/single/100x100bb.jpg"),
+            result("Moyka", "Headlights", "BULLSEYE", "https://is1-ssl.mzstatic.com/bullseye/100x100bb.jpg"),
         ]
-        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track)?.absoluteString == "https://x.test/bullseye/600x600bb.jpg")
+        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track)?.absoluteString == "https://is1-ssl.mzstatic.com/bullseye/600x600bb.jpg")
     }
 
     @Test func fallsBackToTheFirstMatchingTrack() {
-        let results = [result("Moyka", "Headlights", "Some Compilation", "https://x.test/comp/100x100bb.jpg")]
-        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track)?.absoluteString == "https://x.test/comp/600x600bb.jpg")
+        let results = [result("Moyka", "Headlights", "Some Compilation", "https://is1-ssl.mzstatic.com/comp/100x100bb.jpg")]
+        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track)?.absoluteString == "https://is1-ssl.mzstatic.com/comp/600x600bb.jpg")
     }
 
     @Test func ignoresDifferentTracksAndArtists() {
@@ -213,6 +213,43 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
         #expect(url.absoluteString.hasPrefix("https://itunes.apple.com/search?"))
         #expect(!url.absoluteString.contains(" "))
         #expect(url.absoluteString.contains("Rock%20%26%20Roll"))
+    }
+
+    @Test func searchURLKeepsPlusSigns() throws {
+        let url = try #require(ArtworkSearch.searchURL(for: TrackIdentity(persistentID: "ID", name: "Song", artist: "Florence + the Machine", album: "A")))
+        #expect(url.absoluteString.contains("Florence%20%2B%20the%20Machine"))
+    }
+
+    @Test func searchURLCapsLongMetadata() throws {
+        let long = String(repeating: "a", count: 5000)
+        let url = try #require(ArtworkSearch.searchURL(for: TrackIdentity(persistentID: "ID", name: long, artist: long, album: long)))
+        #expect(url.absoluteString.count < 1000)
+    }
+
+    @Test(arguments: [
+        "https://is1-ssl.mzstatic.com/image/a.jpg",
+        "https://mzstatic.com/a.jpg",
+        "https://music.apple.com/a.jpg",
+    ])
+    func allowsAppleImageHosts(link: String) throws {
+        #expect(ArtworkSearch.isSafeArtworkURL(try #require(URL(string: link))))
+    }
+
+    @Test(arguments: [
+        "http://is1-ssl.mzstatic.com/a.jpg",
+        "file:///etc/passwd",
+        "https://evil.example/a.jpg",
+        "https://evilmzstatic.com/a.jpg",
+        "https://mzstatic.com.evil.example/a.jpg",
+    ])
+    func rejectsOtherHostsAndSchemes(link: String) throws {
+        #expect(!ArtworkSearch.isSafeArtworkURL(try #require(URL(string: link))))
+    }
+
+    @Test func unsafeResultsAreNotFollowed() {
+        let track = TrackIdentity(persistentID: "ID", name: "S", artist: "A", album: "B")
+        let results = [ArtworkSearch.Result(artistName: "A", trackName: "S", collectionName: "B", artworkUrl100: "https://evil.example/100x100bb.jpg")]
+        #expect(ArtworkSearch.bestArtworkURL(in: results, for: track) == nil)
     }
 
     @Test func sniffsImageTypes() {
