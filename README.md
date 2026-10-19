@@ -66,10 +66,11 @@ PUT /airplay_devices/:id/volume    level=0-100
 - Playlist ids are slugs of the name (`Outkast: The '90s` becomes `outkast-the-90s`). Playlists that
   share a name get a short suffix after the first, and `PUT /playlists/:id/play` also takes a
   persistent id.
-- Artwork comes from the current track when it's in your library. Songs streamed from the Apple Music
-  catalog have no artwork that AppleScript can read, so for those the artist, title and album are
-  looked up on Apple's public iTunes Search API and the cover is fetched from there (600px). Results are
-  cached per track. That's the only request the app makes to the internet.
+- Artwork for songs in your library comes from the track itself. For songs streamed from Apple Music
+  (including radio), Music's scripting reports either no artwork or the wrong one, so the cover is
+  looked up on Apple's public iTunes Search API using the artist, title and album (600px). Music's own
+  artwork is used only if that finds nothing. Results are cached per track. That's the only request
+  the app makes to the internet.
 - If Music isn't running, `/now_playing` reports `{"player_state": "stopped"}` and most other
   requests return `503`. Only play, playpause and playing a playlist launch Music.
 - It's compatible with the original itunes-api, with a few differences: unknown playlists or AirPlay

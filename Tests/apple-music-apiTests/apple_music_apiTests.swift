@@ -252,6 +252,32 @@ private func json(_ value: some Encodable) throws -> [String: Any] {
         #expect(ArtworkSearch.bestArtworkURL(in: results, for: track) == nil)
     }
 
+    private func identityList(_ trackClass: String) -> NSAppleEventDescriptor {
+        let list = NSAppleEventDescriptor.list()
+        for (i, text) in ["PID", "Headlights", "Moyka", "BULLSEYE", trackClass].enumerated() {
+            list.insert(.init(string: text), at: i + 1)
+        }
+        return list
+    }
+
+    @Test func urlTracksAreStreamed() throws {
+        let track = try #require(TrackIdentity(descriptor: identityList("URL track")))
+        #expect(track.isStreamed)
+        #expect(track.name == "Headlights")
+    }
+
+    @Test(arguments: ["shared track", "file track", "audio CD track"])
+    func otherTracksAreNotStreamed(trackClass: String) throws {
+        let track = try #require(TrackIdentity(descriptor: identityList(trackClass)))
+        #expect(!track.isStreamed)
+    }
+
+    @Test func rejectsMalformedIdentityLists() {
+        let list = NSAppleEventDescriptor.list()
+        list.insert(.init(string: "only one"), at: 1)
+        #expect(TrackIdentity(descriptor: list) == nil)
+    }
+
     @Test func sniffsImageTypes() {
         #expect(ArtworkSearch.contentType(for: Data([0xFF, 0xD8, 0xFF, 0xE0])) == "image/jpeg")
         #expect(ArtworkSearch.contentType(for: Data([0x89, 0x50, 0x4E, 0x47])) == "image/png")

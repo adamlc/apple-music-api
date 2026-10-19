@@ -47,9 +47,13 @@ things back (volume, shuffle, repeat, AirPlay devices) afterwards.
 - HA matches `play_media` playlists by id or name from `GET /playlists`. Ids are slugs of the name;
   duplicates keep the plain slug for the first and get a persistent-id suffix after that.
 - HA requests `/artwork?id=...`; the query is ignored.
-- Streamed Apple Music catalog tracks (AppleScript class `URL track`) report zero artworks, so
-  `/artwork` falls back to Apple's iTunes Search API (`ArtworkSearch`), matching on artist, title and
-  preferably album, and caches by persistent id. Library tracks use the embedded artwork.
+- Streamed tracks (AppleScript class `URL track`: catalog songs and radio) can't be trusted to report
+  their artwork. Catalog songs report zero artworks, and on radio the scripting artwork has been the
+  previous song's cover or the station logo, even seconds after the track changed (Music's window shows
+  the right one). So `/artwork` looks streamed tracks up on Apple's iTunes Search API first
+  (`ArtworkSearch`: matches artist, title, preferably album; only follows https links to Apple's image
+  hosts) and falls back to Music's embedded artwork, uncached, if the search finds nothing. Library
+  tracks use the embedded artwork, with the search as a fallback. Cache is per persistent id.
 
 **macOS permissions and signing**
 - The "control Music" permission is tied to the responsible process. Launch the app with `open` (or

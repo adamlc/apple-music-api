@@ -10,6 +10,23 @@ struct TrackIdentity: Sendable {
     var name: String
     var artist: String
     var album: String
+    /// Streamed from the Apple Music catalog or radio (AppleScript class `URL track`), not a library track.
+    var isStreamed = false
+
+    init(persistentID: String, name: String, artist: String, album: String, isStreamed: Bool = false) {
+        self.persistentID = persistentID
+        self.name = name
+        self.artist = artist
+        self.album = album
+        self.isStreamed = isStreamed
+    }
+
+    /// From the list returned by the identity script: {persistent ID, name, artist, album, class}.
+    init?(descriptor d: NSAppleEventDescriptor) {
+        guard d.numberOfItems == 5 else { return nil }
+        func s(_ i: Int) -> String { d.atIndex(i)?.stringValue ?? "" }
+        self.init(persistentID: s(1), name: s(2), artist: s(3), album: s(4), isStreamed: s(5) == "URL track")
+    }
 }
 
 extension MusicScript {
@@ -17,15 +34,17 @@ extension MusicScript {
     func currentTrackIdentity() async throws -> TrackIdentity? {
         let d: NSAppleEventDescriptor
         do {
-            d = try await tell("return {persistent ID, name, artist, album} of current track")
+            d = try await tell("""
+                set info to {persistent ID, name, artist, album} of current track
+                set trackClass to (class of current track) as text
+                return info & {trackClass}
+                """)
         } catch is MusicNotRunning {
             throw MusicNotRunning()
         } catch {
             return nil  // no current track
         }
-        guard d.numberOfItems == 4 else { return nil }
-        func s(_ i: Int) -> String { d.atIndex(i)?.stringValue ?? "" }
-        return TrackIdentity(persistentID: s(1), name: s(2), artist: s(3), album: s(4))
+        return TrackIdentity(descriptor: d)
     }
 
     /// The artwork embedded in the current track, which library tracks have. Streamed Apple Music
@@ -129,8 +148,9 @@ enum ArtworkSearch {
     }
 }
 
-/// Finds artwork for the current track: embedded artwork first, then Apple's search API for tracks
-/// streamed from the Apple Music catalog. Results (including "none") are remembered per track.
+/// Finds artwork for the current track. Library tracks use their embedded artwork. Streamed tracks
+/// (catalog songs and radio) are looked up on Apple's search API first, because Music's scripting
+/// either reports no artwork for them or the wrong one. Results are remembered per track.
 actor ArtworkLookup {
     private let music: MusicScript
     private var cache: [String: ArtworkImage?] = [:]
@@ -143,9 +163,21 @@ actor ArtworkLookup {
         guard let track = try await music.currentTrackIdentity() else { return nil }
         if let cached = cache[track.persistentID] { return cached }
 
+        if track.isStreamed {
+            // Music's scripting artwork for streamed tracks can't be trusted: for radio it has been the
+            // previous song's cover, or the station logo. Look the cover up instead, and only use
+            // Music's version if the search finds nothing. That fallback isn't cached, since it may be
+            // stale, so it's tried again on the next request.
+            if let found = await ArtworkSearch.fetch(for: track) {
+                remember(found, for: track.persistentID)
+                return found
+            }
+            return try await music.embeddedArtwork()
+        }
+
+        // Library track: use the artwork embedded in it, or search if it has none.
         var image = try await music.embeddedArtwork()
         if image == nil { image = await ArtworkSearch.fetch(for: track) }
-
         remember(image, for: track.persistentID)
         return image
     }
