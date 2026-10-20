@@ -16,7 +16,9 @@ and is a Swift rewrite of Jon Maddox's [itunes-api](https://github.com/maddox/it
 
 ## Install
 
-Requires macOS 14 or later and Xcode (for the Swift toolchain).
+Requires macOS 14 or later and Xcode (for the Swift toolchain). It has only been tested on macOS 27,
+so it may behave differently on earlier versions, because Music's AppleScript support changes between
+releases. Issues from other versions are welcome.
 
 ```sh
 git clone https://github.com/adamlc/apple-music-api.git
