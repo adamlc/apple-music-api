@@ -74,6 +74,14 @@ things back (volume, shuffle, repeat, AirPlay devices) afterwards.
   that command and open `AppIcon-1024.png`. Overlapping subpaths in one `NSBezierPath` cancel out
   where winding differs, so the note is drawn as separate shapes inside one transparency layer.
 
+## Releasing
+
+1. Set `CFBundleVersion` and `CFBundleShortVersionString` in `Resources/Info.plist` to the new version.
+2. `swift test`, then commit to `main` and push.
+3. `git tag -a vX.Y.Z -m "..."` and `git push origin vX.Y.Z`. Don't move a published tag; ship a new patch.
+4. `gh release create vX.Y.Z --title "vX.Y.Z" --notes "..."`. There is no downloadable app yet: it's
+   ad-hoc signed, so a downloaded copy would be blocked by Gatekeeper (see "Not done" below).
+
 ## Repo
 
 - Repo: github.com/adamlc/apple-music-api.
